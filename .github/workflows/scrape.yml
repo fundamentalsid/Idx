@@ -1,1 +1,35 @@
+name: IDX Daily Scraper
 
+on:
+  schedule:
+    - cron: '30 10 * * 1-5'  # 17:30 WIB setiap hari kerja
+  workflow_dispatch:  # bisa trigger manual
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        run: |
+          mkdir -p output
+          python get-list-emiten.py
+          python get-data-harian-emiten.py
+          python get-data-tahunan-emiten.py
+
+      - name: Commit output
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add output/
+          git diff --staged --quiet || git commit -m "Auto: update IDX data $(date +'%Y-%m-%d')"
+          git push
